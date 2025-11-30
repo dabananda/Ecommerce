@@ -1,5 +1,6 @@
 ﻿using ECommerce.Api.Data;
 using ECommerce.Api.Entities;
+using ECommerce.Api.Helpers;
 using ECommerce.Api.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,9 +31,27 @@ namespace ECommerce.Api.Repositories.Implementations
             }
         }
 
-        public async Task<IEnumerable<Product>> GetAllAsync()
+        public async Task<PagedList<Product>> GetAllAsync(ProductParams productParams)
         {
-            return await _context.Products.ToListAsync();
+            var query = _context.Products.AsQueryable();
+
+            // filter by search term
+            if (!string.IsNullOrEmpty(productParams.SearchTerm))
+            {
+                query = query.Where(p => p.Name.Contains(productParams.SearchTerm) || (p.Description != null && p.Description.Contains(productParams.SearchTerm)));
+            }
+
+            // sorting
+            query = productParams.OrderBy switch
+            {
+                "priceAsc" => query.OrderBy(p => p.Price),
+                "pricedesc" => query.OrderByDescending(p => p.Price),
+                "nameDesc" => query.OrderBy(p => p.Name),
+                _ => query.OrderBy(p => p.Name)
+            };
+
+            // pagination
+            return await PagedList<Product>.CreateAsync(query, productParams.PageNumber, productParams.PageSize);
         }
 
         public async Task<Product?> GetByIdAsync(Guid id)

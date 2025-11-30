@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ECommerce.Api.Dtos.Product;
 using ECommerce.Api.Entities;
+using ECommerce.Api.Helpers;
 using ECommerce.Api.Repositories.Interfaces;
 using ECommerce.Api.Services.Interfaces;
 
@@ -29,10 +30,18 @@ namespace ECommerce.Api.Services.Implementations
             await _repo.DeleteAsync(id);
         }
 
-        public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
+        public async Task<PagedList<ProductDto>> GetAllProductsAsync(ProductParams productParams)
         {
-            var products = await _repo.GetAllAsync();
-            return _mapper.Map<IEnumerable<ProductDto>>(products);
+            var pagedProducts = await _repo.GetAllAsync(productParams);
+
+            var productDtos = _mapper.Map<IEnumerable<ProductDto>>(pagedProducts);
+
+            return new PagedList<ProductDto>(
+                productDtos.ToList(),
+                pagedProducts.TotalCount,
+                pagedProducts.CurrentPage,
+                pagedProducts.PageSize
+            );
         }
 
         public async Task<ProductDto?> GetProductByIdAsync(Guid id)

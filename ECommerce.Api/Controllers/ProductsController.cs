@@ -1,6 +1,8 @@
 ﻿using ECommerce.Api.Dtos.Product;
+using ECommerce.Api.Helpers;
 using ECommerce.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace ECommerce.Api.Controllers
 {
@@ -15,9 +17,20 @@ namespace ECommerce.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllProducts()
+        public async Task<IActionResult> GetAllProducts([FromQuery] ProductParams productParams)
         {
-            var products = await _service.GetAllProductsAsync();
+            var products = await _service.GetAllProductsAsync(productParams);
+
+            var metadata = new
+            {
+                products.TotalCount,
+                products.PageSize,
+                products.CurrentPage,
+                products.TotalPages
+            };
+
+            Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(metadata));
+
             return Ok(products);
         }
 
