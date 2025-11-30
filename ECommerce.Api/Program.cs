@@ -1,4 +1,5 @@
 using ECommerce.Api.Data;
+using ECommerce.Api.Middleware;
 using ECommerce.Api.Repositories.Implementations;
 using ECommerce.Api.Repositories.Interfaces;
 using ECommerce.Api.Services.Implementations;
@@ -22,6 +23,9 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 var app = builder.Build();
+
+// Custom middlewares
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
