@@ -5,10 +5,17 @@ using ECommerce.Api.Repositories.Interfaces;
 using ECommerce.Api.Services.Implementations;
 using ECommerce.Api.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+// fluent validation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
 builder.Services.AddOpenApi();
 
 // Database context configuration
