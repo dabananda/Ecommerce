@@ -8,5 +8,6 @@ namespace ECommerce.Api.Data
         public ECommerceDbContext(DbContextOptions<ECommerceDbContext> options) : base(options) { }
 
         public DbSet<Product> Products { get; set; }
+        public DbSet<User> Users { get; set; }
     }
 }
