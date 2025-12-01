@@ -10,72 +10,96 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
 
-builder.Services.AddControllers();
-
-// fluent validation
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-
-// authentication and jwt setup
-builder.Services.AddAuthentication(options =>
+try
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    var jwtSettings = builder.Configuration.GetSection("Jwt");
-    options.TokenValidationParameters = new TokenValidationParameters
+    Log.Information("Starting Web API...");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    // Serilog configuration
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+
+    builder.Services.AddControllers();
+
+    // fluent validation
+    builder.Services.AddFluentValidationAutoValidation();
+    builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+    // authentication and jwt setup
+    builder.Services.AddAuthentication(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!))
-    };
-});
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        var jwtSettings = builder.Configuration.GetSection("Jwt");
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!))
+        };
+    });
 
-builder.Services.AddOpenApi();
+    builder.Services.AddOpenApi();
 
-builder.Services.AddScoped<AuditableEntityInterceptor>();
+    builder.Services.AddScoped<AuditableEntityInterceptor>();
 
-builder.Services.AddDbContext<ECommerceDbContext>((sp, options) =>
-{
-    var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ECommerceDbConnection")).AddInterceptors(interceptor);
-});
+    builder.Services.AddDbContext<ECommerceDbContext>((sp, options) =>
+    {
+        var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
+        options.UseSqlServer(builder.Configuration.GetConnectionString("ECommerceDbConnection")).AddInterceptors(interceptor);
+    });
 
-// AutoMapper configuration
-builder.Services.AddAutoMapper(typeof(Program));
+    // AutoMapper configuration
+    builder.Services.AddAutoMapper(typeof(Program));
 
-// Product service and repository registrations
-builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
+    // Product service and repository registrations
+    builder.Services.AddScoped<IProductService, ProductService>();
+    builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
-// Auth service registration
-builder.Services.AddScoped<IAuthService, AuthService>();
+    // Auth service registration
+    builder.Services.AddScoped<IAuthService, AuthService>();
 
-var app = builder.Build();
+    var app = builder.Build();
 
-// Custom middlewares
-app.UseMiddleware<GlobalExceptionMiddleware>();
+    app.UseSerilogRequestLogging();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
+    // Custom middlewares
+    app.UseMiddleware<GlobalExceptionMiddleware>();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+    }
+
+    app.UseHttpsRedirection();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    app.Run();
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
