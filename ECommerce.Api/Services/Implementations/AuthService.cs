@@ -41,10 +41,9 @@ namespace ECommerce.Api.Services.Implementations
 
             var result = await _userManager.CreateAsync(user, dto.Password);
 
-            if (!result.Succeeded)
+            if (result.Succeeded)
             {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new Exception($"Registration failed: {errors}");
+                await _userManager.AddToRoleAsync(user, "User");
             }
 
             // Generate Email Confirmation Token
@@ -71,7 +70,10 @@ namespace ECommerce.Api.Services.Implementations
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
             if (!result.Succeeded) return null;
 
-            var token = GenerateJwtToken(user);
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var token = GenerateJwtToken(user, roles);
+
             return new AuthResponseDto { Username = user.UserName!, Token = token };
         }
 
@@ -117,7 +119,7 @@ namespace ECommerce.Api.Services.Implementations
             return "Password has been reset successfully.";
         }
 
-        private string GenerateJwtToken(ApplicationUser user)
+        private string GenerateJwtToken(ApplicationUser user, IList<string> roles)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
             var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
@@ -128,6 +130,9 @@ namespace ECommerce.Api.Services.Implementations
                 new Claim(ClaimTypes.Name, user.UserName!),
                 new Claim(ClaimTypes.Email, user.Email!)
             };
+
+            foreach (var role in roles)
+                claims.Add(new Claim(ClaimTypes.Role, role));
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
