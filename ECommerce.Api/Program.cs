@@ -1,13 +1,16 @@
 using ECommerce.Api.Data;
+using ECommerce.Api.Entities;
 using ECommerce.Api.Interceptors;
 using ECommerce.Api.Middleware;
 using ECommerce.Api.Repositories.Implementations;
 using ECommerce.Api.Repositories.Interfaces;
 using ECommerce.Api.Services.Implementations;
 using ECommerce.Api.Services.Interfaces;
+using ECommerce.Api.Settings;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -63,6 +66,30 @@ try
         var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
         options.UseSqlServer(builder.Configuration.GetConnectionString("ECommerceDbConnection")).AddInterceptors(interceptor);
     });
+
+    // Configure Identity
+    builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+    {
+        // Password settings
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequiredLength = 4;
+
+        // Lockout settings
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+
+        // User settings
+        options.User.RequireUniqueEmail = true;
+        options.SignIn.RequireConfirmedEmail = true;
+    })
+    .AddEntityFrameworkStores<ECommerceDbContext>()
+    .AddDefaultTokenProviders();
+
+    // Configure Mail Settings
+    builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+    builder.Services.AddTransient<IEmailService, EmailService>();
 
     // AutoMapper configuration
     builder.Services.AddAutoMapper(typeof(Program));
