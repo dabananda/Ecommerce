@@ -10,5 +10,6 @@ namespace ECommerce.Api.Repositories.Interfaces
         Task<IEnumerable<Order>> GetAllOrdersAsync();
         Task<Order?> GetOrderByIdAdminAsync(Guid id);
         Task UpdateAsync(Order order);
+        Task<bool> HasUserPurchasedProductAsync(string buyerId, Guid productId);
     }
 }

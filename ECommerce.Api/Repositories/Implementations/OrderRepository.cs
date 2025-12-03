@@ -56,5 +56,20 @@ namespace ECommerce.Api.Repositories.Implementations
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<bool> HasUserPurchasedProductAsync(string buyerId, Guid productId)
+        {
+            var validStatuses = new[]
+            {
+                OrderStatus.PaymentReceived,
+                OrderStatus.Shipped,
+                OrderStatus.Complete
+            };
+
+            return await _context.Orders
+                .Where(o => o.BuyerId == buyerId && validStatuses.Contains(o.Status))
+                .SelectMany(o => o.OrderItems)
+                .AnyAsync(oi => oi.ProductId == productId);
+        }
     }
 }

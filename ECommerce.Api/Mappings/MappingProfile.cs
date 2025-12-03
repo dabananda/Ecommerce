@@ -3,6 +3,7 @@ using ECommerce.Api.Dtos.Cart;
 using ECommerce.Api.Dtos.Category;
 using ECommerce.Api.Dtos.Order;
 using ECommerce.Api.Dtos.Product;
+using ECommerce.Api.Dtos.Review;
 using ECommerce.Api.Entities;
 using ECommerce.Api.Entities.OrderAggregate;
 
@@ -46,6 +47,11 @@ namespace ECommerce.Api.Mappings
             CreateMap<OrderItem, OrderItemDto>();
 
             CreateMap<Address, AddressDto>().ReverseMap();
+
+            // Review Mappings
+            CreateMap<Review, ReviewDto>()
+                .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.UserName));
+            CreateMap<CreateReviewDto, Review>();
         }
     }
 }
