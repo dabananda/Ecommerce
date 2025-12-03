@@ -4,6 +4,7 @@ using ECommerce.Api.Dtos.Category;
 using ECommerce.Api.Dtos.Order;
 using ECommerce.Api.Dtos.Product;
 using ECommerce.Api.Dtos.Review;
+using ECommerce.Api.Dtos.Wishlist;
 using ECommerce.Api.Entities;
 using ECommerce.Api.Entities.OrderAggregate;
 
@@ -52,6 +53,15 @@ namespace ECommerce.Api.Mappings
             CreateMap<Review, ReviewDto>()
                 .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.UserName));
             CreateMap<CreateReviewDto, Review>();
+
+            // Wishlist Mappings
+            CreateMap<Wishlist, WishlistDto>()
+                .ForMember(d => d.ProductId, o => o.MapFrom(s => s.Product.Id))
+                .ForMember(d => d.ProductName, o => o.MapFrom(s => s.Product.Name))
+                .ForMember(d => d.Price, o => o.MapFrom(s => s.Product.Price))
+                .ForMember(d => d.Category, o => o.MapFrom(s => s.Product.Category.Name))
+                .ForMember(d => d.ImageUrl, o => o.MapFrom(s => s.Product.Images.FirstOrDefault(x => x.IsMain).Url))
+                .ForMember(d => d.AddedAt, o => o.MapFrom(s => s.CreatedAt));
         }
     }
 }
