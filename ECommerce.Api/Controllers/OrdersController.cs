@@ -1,4 +1,5 @@
-﻿using ECommerce.Api.Services.Interfaces;
+﻿using ECommerce.Api.Dtos.Order;
+using ECommerce.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,14 +17,14 @@ namespace ECommerce.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateOrder()
+        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
         {
             try
             {
                 var buyerId = User.Identity?.Name;
                 if (string.IsNullOrEmpty(buyerId)) return Unauthorized();
 
-                var order = await _orderService.CreateOrderAsync(buyerId);
+                var order = await _orderService.CreateOrderAsync(buyerId, dto);
                 return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
             }
             catch (Exception ex)
@@ -53,6 +54,22 @@ namespace ECommerce.Api.Controllers
             if (order == null) return NotFound();
 
             return Ok(order);
+        }
+
+        [HttpGet("admin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllOrdersAdmin()
+        {
+            var orders = await _orderService.GetAllOrdersAsync();
+            return Ok(orders);
+        }
+
+        [HttpPatch("{id}/status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] string status)
+        {
+            await _orderService.UpdateOrderStatusAsync(id, status);
+            return NoContent();
         }
     }
 }

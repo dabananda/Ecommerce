@@ -44,6 +44,8 @@ namespace ECommerce.Api.Mappings
                 .ForMember(d => d.Total, o => o.MapFrom(s => s.GetTotal()));
 
             CreateMap<OrderItem, OrderItemDto>();
+
+            CreateMap<Address, AddressDto>().ReverseMap();
         }
     }
 }

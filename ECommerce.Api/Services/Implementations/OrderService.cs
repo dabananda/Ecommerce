@@ -11,35 +11,50 @@ namespace ECommerce.Api.Services.Implementations
         private readonly IOrderRepository _orderRepo;
         private readonly ICartRepository _cartRepo;
         private readonly IMapper _mapper;
+        private readonly IProductRepository _productRepo;
 
-        public OrderService(IOrderRepository orderRepo, ICartRepository cartRepo, IMapper mapper)
+        public OrderService(IOrderRepository orderRepo, ICartRepository cartRepo, IProductRepository productRepo, IMapper mapper)
         {
             _orderRepo = orderRepo;
             _cartRepo = cartRepo;
+            _productRepo = productRepo;
             _mapper = mapper;
         }
 
-        public async Task<OrderDto> CreateOrderAsync(string buyerId)
+        public async Task<OrderDto> CreateOrderAsync(string buyerId, CreateOrderDto dto)
         {
+            // 1. Get Cart
             var cart = await _cartRepo.GetCartAsync(buyerId);
+            if (cart == null || !cart.Items.Any()) throw new Exception("Cart is empty");
 
-            if (cart == null || !cart.Items.Any())
-                throw new Exception("Cannot checkout with an empty cart");
-
+            // 2. Validate Stock & Create Items
             var orderItems = new List<OrderItem>();
             foreach (var item in cart.Items)
             {
+                var product = await _productRepo.GetByIdAsync(item.ProductId);
+                if (product == null) throw new Exception($"Product {item.ProductId} not found");
+
+                // Stock Check
+                if (product.StockQuantity < item.Quantity)
+                    throw new Exception($"Insufficient stock for {product.Name}");
+
+                // Deduct Stock
+                product.StockQuantity -= item.Quantity;
+                await _productRepo.UpdateAsync(product);
+
                 var orderItem = new OrderItem
                 {
                     ProductId = item.ProductId,
-                    ProductName = item.Product.Name,
-                    PictureUrl = item.Product.Images.FirstOrDefault(x => x.IsMain)?.Url ?? "",
-                    Price = item.Product.Price,
+                    ProductName = product.Name,
+                    PictureUrl = product.Images.FirstOrDefault(x => x.IsMain)?.Url ?? "",
+                    Price = product.Price,
                     Quantity = item.Quantity
                 };
                 orderItems.Add(orderItem);
             }
 
+            // 3. Create Order with Address
+            var address = _mapper.Map<Address>(dto.ShippingAddress);
             var subtotal = orderItems.Sum(item => item.Price * item.Quantity);
 
             var order = new Order
@@ -47,11 +62,12 @@ namespace ECommerce.Api.Services.Implementations
                 BuyerId = buyerId,
                 OrderItems = orderItems,
                 Subtotal = subtotal,
+                ShippingAddress = address,
                 Status = OrderStatus.Pending
             };
 
+            // 4. Save & Clean up
             await _orderRepo.CreateOrderAsync(order);
-
             await _cartRepo.DeleteCartAsync(buyerId);
 
             return _mapper.Map<OrderDto>(order);
@@ -67,6 +83,24 @@ namespace ECommerce.Api.Services.Implementations
         {
             var orders = await _orderRepo.GetOrdersByUserAsync(buyerId);
             return _mapper.Map<IEnumerable<OrderDto>>(orders);
+        }
+
+        public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync()
+        {
+            var orders = await _orderRepo.GetAllOrdersAsync();
+            return _mapper.Map<IEnumerable<OrderDto>>(orders);
+        }
+
+        public async Task UpdateOrderStatusAsync(Guid orderId, string status)
+        {
+            var order = await _orderRepo.GetOrderByIdAdminAsync(orderId);
+            if (order == null) throw new Exception("Order not found");
+
+            if (Enum.TryParse<OrderStatus>(status, true, out var result))
+            {
+                order.Status = result;
+                await _orderRepo.UpdateAsync(order);
+            }
         }
     }
 }
