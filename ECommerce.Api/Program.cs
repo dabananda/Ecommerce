@@ -108,6 +108,8 @@ try
     builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
     builder.Services.AddScoped<IPhotoService, PhotoService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
+    builder.Services.AddScoped<ICartService, CartService>();
+    builder.Services.AddScoped<ICartRepository, CartRepository>();
 
     var app = builder.Build();
 

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerce.Api.Dtos.Cart;
 using ECommerce.Api.Dtos.Category;
 using ECommerce.Api.Dtos.Product;
 using ECommerce.Api.Entities;
@@ -26,6 +27,14 @@ namespace ECommerce.Api.Mappings
                 .ForMember(d => d.Images, o => o.Ignore());
 
             CreateMap<ProductImage, ProductImageDto>();
+
+            // Cart Mappings
+            CreateMap<Cart, CartDto>();
+            CreateMap<CartItem, CartItemDto>()
+                .ForMember(d => d.ProductName, o => o.MapFrom(s => s.Product.Name))
+                .ForMember(d => d.Price, o => o.MapFrom(s => s.Product.Price))
+                .ForMember(d => d.ImageUrl, o => o.MapFrom(s => s.Product.Images.FirstOrDefault(x => x.IsMain).Url))
+                .ForMember(d => d.Category, o => o.MapFrom(s => s.Product.Category.Name));
         }
     }
 }
