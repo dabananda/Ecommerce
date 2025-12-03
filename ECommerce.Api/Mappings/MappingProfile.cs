@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using ECommerce.Api.Dtos.Cart;
 using ECommerce.Api.Dtos.Category;
+using ECommerce.Api.Dtos.Order;
 using ECommerce.Api.Dtos.Product;
 using ECommerce.Api.Entities;
+using ECommerce.Api.Entities.OrderAggregate;
 
 namespace ECommerce.Api.Mappings
 {
@@ -35,6 +37,13 @@ namespace ECommerce.Api.Mappings
                 .ForMember(d => d.Price, o => o.MapFrom(s => s.Product.Price))
                 .ForMember(d => d.ImageUrl, o => o.MapFrom(s => s.Product.Images.FirstOrDefault(x => x.IsMain).Url))
                 .ForMember(d => d.Category, o => o.MapFrom(s => s.Product.Category.Name));
+
+            // Order Mappings
+            CreateMap<Order, OrderDto>()
+                .ForMember(d => d.OrderDate, o => o.MapFrom(s => s.CreatedAt))
+                .ForMember(d => d.Total, o => o.MapFrom(s => s.GetTotal()));
+
+            CreateMap<OrderItem, OrderItemDto>();
         }
     }
 }

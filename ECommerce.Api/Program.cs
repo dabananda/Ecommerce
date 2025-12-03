@@ -102,14 +102,16 @@ try
     builder.Services.AddAutoMapper(typeof(Program));
 
     // service and repository registrations
-    builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<IProductRepository, ProductRepository>();
-    builder.Services.AddScoped<ICategoryService, CategoryService>();
+    builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+    builder.Services.AddScoped<ICategoryService, CategoryService>();
     builder.Services.AddScoped<IPhotoService, PhotoService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
-    builder.Services.AddScoped<ICartService, CartService>();
     builder.Services.AddScoped<ICartRepository, CartRepository>();
+    builder.Services.AddScoped<ICartService, CartService>();
+    builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+    builder.Services.AddScoped<IOrderService, OrderService>();
 
     var app = builder.Build();
 
