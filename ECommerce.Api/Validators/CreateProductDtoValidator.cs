@@ -21,10 +21,14 @@ namespace ECommerce.Api.Validators
             RuleFor(x => x.StockQuantity)
                 .GreaterThanOrEqualTo(0).WithMessage("Stock quantity cannot be negative");
 
-            RuleFor(x => x.ImageUrl)
-                .Must(uri => Uri.TryCreate(uri, UriKind.Absolute, out _))
-                .When(x => !string.IsNullOrEmpty(x.ImageUrl))
-                .WithMessage("Invalid Image URL format");
+            RuleFor(x => x.ImageFile)
+                .Must(file => file.Length > 0)
+                    .WithMessage("File cannot be empty")
+                .Must(file => file.Length <= 1 * 1024 * 1024)
+                    .WithMessage("File size must be less than 1MB")
+                .Must(file => new[] { "image/jpeg", "image/png" }.Contains(file.ContentType))
+                    .WithMessage("Only JPEG and PNG files are allowed")
+                .When(x => x.ImageFile != null);
         }
     }
 }

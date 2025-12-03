@@ -30,7 +30,11 @@ try
         .ReadFrom.Services(services)
         .Enrich.FromLogContext());
 
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        });
 
     // fluent validation
     builder.Services.AddFluentValidationAutoValidation();
@@ -91,14 +95,18 @@ try
     builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
     builder.Services.AddTransient<IEmailService, EmailService>();
 
+    // Configure Cloudinary Settings
+    builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+
     // AutoMapper configuration
     builder.Services.AddAutoMapper(typeof(Program));
 
-    // Product service and repository registrations
+    // service and repository registrations
     builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<IProductRepository, ProductRepository>();
-
-    // Auth service registration
+    builder.Services.AddScoped<ICategoryService, CategoryService>();
+    builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+    builder.Services.AddScoped<IPhotoService, PhotoService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
 
     var app = builder.Build();

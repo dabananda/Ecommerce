@@ -11,18 +11,39 @@ namespace ECommerce.Api.Services.Implementations
     {
         private readonly IProductRepository _repo;
         private readonly IMapper _mapper;
+        private readonly IPhotoService _photoService;
 
-        public ProductService(IProductRepository repo, IMapper mapper)
+        public ProductService(IProductRepository repo, IMapper mapper, IPhotoService photoService)
         {
             _repo = repo;
             _mapper = mapper;
+            _photoService = photoService;
         }
 
         public async Task<ProductDto> CreateProductAsync(CreateProductDto dto)
         {
             var product = _mapper.Map<Product>(dto);
+
+            if (dto.ImageFile != null)
+            {
+                var result = await _photoService.AddPhotoAsync(dto.ImageFile);
+
+                if (result.Error != null)
+                    throw new Exception(result.Error.Message);
+
+                var image = new ProductImage
+                {
+                    Url = result.SecureUrl.AbsoluteUri,
+                    PublicId = result.PublicId,
+                    IsMain = true
+                };
+
+                product.Images.Add(image);
+            }
+
             await _repo.AddAsync(product);
-            return _mapper.Map<ProductDto>(product);
+            var savedProduct = await _repo.GetByIdAsync(product.Id);
+            return _mapper.Map<ProductDto>(savedProduct);
         }
 
         public async Task DeleteProductAsync(Guid id)
@@ -54,7 +75,29 @@ namespace ECommerce.Api.Services.Implementations
         {
             var existingProduct = await _repo.GetByIdAsync(id);
             if (existingProduct == null) return;
+
             _mapper.Map(dto, existingProduct);
+
+            if (dto.ImageFile != null)
+            {
+                var uploadResult = await _photoService.AddPhotoAsync(dto.ImageFile);
+
+                if (uploadResult.Error == null)
+                {
+                    foreach (var img in existingProduct.Images)
+                        img.IsMain = false;
+
+                    var newImage = new ProductImage
+                    {
+                        Url = uploadResult.SecureUrl.AbsoluteUri,
+                        PublicId = uploadResult.PublicId,
+                        IsMain = true,
+                        ProductId = existingProduct.Id
+                    };
+
+                    existingProduct.Images.Add(newImage);
+                }
+            }
             await _repo.UpdateAsync(existingProduct);
         }
     }

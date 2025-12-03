@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerce.Api.Dtos.Category;
 using ECommerce.Api.Dtos.Product;
 using ECommerce.Api.Entities;
 
@@ -8,8 +9,23 @@ namespace ECommerce.Api.Mappings
     {
         public MappingProfile()
         {
-            CreateMap<Product, ProductDto>().ReverseMap();
-            CreateMap<CreateProductDto, Product>().ReverseMap();
+            // Category Mappings
+            CreateMap<Category, CategoryDto>()
+                .ForMember(d => d.ParentCategoryName, o => o.MapFrom(s => s.ParentCategory != null ? s.ParentCategory.Name : null));
+
+            CreateMap<CreateCategoryDto, Category>()
+                .ForMember(d => d.Slug, o => o.MapFrom(s => s.Name.ToLower().Replace(" ", "-")))
+                .ForMember(d => d.ParentCategoryId, o => o.MapFrom(s => s.ParentCategoryId));
+
+            // Product Mappings
+            CreateMap<Product, ProductDto>()
+                .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category.Name))
+                .ForMember(d => d.MainImageUrl, o => o.MapFrom(s => s.Images.FirstOrDefault(x => x.IsMain).Url));
+
+            CreateMap<CreateProductDto, Product>()
+                .ForMember(d => d.Images, o => o.Ignore());
+
+            CreateMap<ProductImage, ProductImageDto>();
         }
     }
 }

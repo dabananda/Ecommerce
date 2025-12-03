@@ -1,6 +1,7 @@
 ﻿using ECommerce.Api.Dtos.Product;
 using ECommerce.Api.Helpers;
 using ECommerce.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
@@ -43,14 +44,16 @@ namespace ECommerce.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateProduct([FromBody] CreateProductDto productDto)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateProduct([FromForm] CreateProductDto productDto)
         {
             var createdProduct = await _service.CreateProductAsync(productDto);
             return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, createdProduct);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] CreateProductDto productDto)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateProduct(Guid id, [FromForm] CreateProductDto productDto)
         {
             var existingProduct = await _service.GetProductByIdAsync(id);
             if (existingProduct == null) return NotFound();
@@ -59,6 +62,7 @@ namespace ECommerce.Api.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(Guid id)
         {
             var existingProduct = await _service.GetProductByIdAsync(id);
