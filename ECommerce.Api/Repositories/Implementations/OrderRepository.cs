@@ -76,5 +76,13 @@ namespace ECommerce.Api.Repositories.Implementations
         {
             return await _context.Orders.FirstOrDefaultAsync(o => o.PaymentIntentId == paymentIntentId);
         }
+
+        public async Task<List<Order>> GetExpiredOrdersAsync(DateTime olderThan)
+        {
+            return await _context.Orders
+                .Include(o => o.OrderItems)
+                .Where(o => o.Status == OrderStatus.Pending && o.CreatedAt < olderThan)
+                .ToListAsync();
+        }
     }
 }

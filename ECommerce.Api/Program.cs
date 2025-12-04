@@ -121,6 +121,9 @@ try
     builder.Services.AddScoped<IWishlistService, WishlistService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
 
+    // Background Services
+    builder.Services.AddHostedService<ECommerce.Api.Services.Background.StockReleaseService>();
+
     var app = builder.Build();
 
     // Seed Database
