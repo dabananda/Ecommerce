@@ -11,5 +11,6 @@ namespace ECommerce.Api.Repositories.Interfaces
         Task<Order?> GetOrderByIdAdminAsync(Guid id);
         Task UpdateAsync(Order order);
         Task<bool> HasUserPurchasedProductAsync(string buyerId, Guid productId);
+        Task<Order?> GetOrderByPaymentIntentIdAsync(string paymentIntentId);
     }
 }

@@ -98,6 +98,9 @@ try
     // Configure Cloudinary Settings
     builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 
+    // Configure Stripe Settings
+    builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
+
     // AutoMapper configuration
     builder.Services.AddAutoMapper(typeof(Program));
 
@@ -116,6 +119,7 @@ try
     builder.Services.AddScoped<IReviewService, ReviewService>();
     builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
     builder.Services.AddScoped<IWishlistService, WishlistService>();
+    builder.Services.AddScoped<IPaymentService, PaymentService>();
 
     var app = builder.Build();
 

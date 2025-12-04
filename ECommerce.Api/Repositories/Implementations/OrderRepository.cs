@@ -71,5 +71,10 @@ namespace ECommerce.Api.Repositories.Implementations
                 .SelectMany(o => o.OrderItems)
                 .AnyAsync(oi => oi.ProductId == productId);
         }
+
+        public async Task<Order?> GetOrderByPaymentIntentIdAsync(string paymentIntentId)
+        {
+            return await _context.Orders.FirstOrDefaultAsync(o => o.PaymentIntentId == paymentIntentId);
+        }
     }
 }
