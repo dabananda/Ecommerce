@@ -77,5 +77,23 @@ namespace ECommerce.Api.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken(RefreshTokenDto dto)
+        {
+            try
+            {
+                var result = await _authService.RefreshTokenAsync(dto);
+
+                if (result == null)
+                    return BadRequest("Invalid Request. Token may be expired or revoked.");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

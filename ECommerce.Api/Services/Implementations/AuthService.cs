@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 
@@ -75,9 +76,45 @@ namespace ECommerce.Api.Services.Implementations
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            var token = GenerateJwtToken(user, roles);
+            var accessToken = GenerateJwtToken(user, roles);
+            var refreshToken = GenerateRefreshToken();
 
-            return new AuthResponseDto { Username = user.UserName!, Token = token };
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            await _userManager.UpdateAsync(user);
+
+            return new AuthResponseDto
+            {
+                Username = user.UserName!,
+                Token = accessToken,
+                RefreshToken = refreshToken
+            };
+        }
+
+        public async Task<AuthResponseDto?> RefreshTokenAsync(RefreshTokenDto dto)
+        {
+            var principal = GetPrincipalFromExpiredToken(dto.Token);
+            if (principal?.Identity?.Name is null) return null;
+
+            var user = await _userManager.FindByNameAsync(principal.Identity.Name);
+            if (user == null || user.RefreshToken != dto.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            {
+                return null;
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var newAccessToken = GenerateJwtToken(user, roles);
+            var newRefreshToken = GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            await _userManager.UpdateAsync(user);
+
+            return new AuthResponseDto
+            {
+                Username = user.UserName!,
+                Token = newAccessToken,
+                RefreshToken = newRefreshToken
+            };
         }
 
         public async Task<string> VerifyEmailAsync(string userId, string token)
@@ -122,6 +159,7 @@ namespace ECommerce.Api.Services.Implementations
             return "Password has been reset successfully.";
         }
 
+        // Helper: Generate JWT Token
         private string GenerateJwtToken(ApplicationUser user, IList<string> roles)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
@@ -149,6 +187,42 @@ namespace ECommerce.Api.Services.Implementations
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        // Helper: Generate Secure Random String
+        private static string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        // Helper: Extract User info from expired token (without validating lifetime)
+        private ClaimsPrincipal? GetPrincipalFromExpiredToken(string? token)
+        {
+            var jwtSettings = _configuration.GetSection("Jwt");
+            var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateLifetime = false
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+
+            if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+                !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new SecurityTokenException("Invalid token");
+            }
+
+            return principal;
         }
     }
 }
