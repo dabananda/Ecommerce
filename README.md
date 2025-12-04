@@ -1,95 +1,100 @@
-# ECommerce API
+# E-Commerce API
 
-A robust, RESTful Web API for an E-Commerce platform built with **.NET 10**, **Entity Framework Core**, and **SQL Server**. This project demonstrates enterprise-grade patterns including Repository Design, Layered Architecture, JWT Authentication, and Structured Logging.
+A robust, enterprise-grade RESTful Web API for an E-Commerce platform. Built with **.NET 10**, **Entity Framework Core**, and **SQL Server**.
 
-## 🚀 Features
+## Key Features
 
-* **CRUD Operations**: Full management of Products.
-* **Advanced Data Access**: Pagination, Filtering, and Sorting.
-* **Security**:
-    * JWT (JSON Web Token) Authentication.
-    * Secure Password Hashing (BCrypt).
-    * Role-Based Authorization.
-* **Validation**: Robust input validation using **FluentValidation**.
-* **Architecture**:
-    * Repository Pattern.
-    * Service Layer (Business Logic isolation).
-    * DTOs (Data Transfer Objects) with AutoMapper.
-* **Resilience**: Global Exception Handling (RFC 7807 Problem Details).
-* **Auditing**: Automated `CreatedAt` and `UpdatedAt` tracking via EF Core Interceptors.
-* **Logging**: Structured logging using **Serilog** (Console + File sinks).
+* **Catalog Management**: Full CRUD for Products and Categories with hierarchical structures.
+* **Advanced Search**: Pagination, Sorting, and Filtering implemented via `ProductParams`.
+* **Shopping Cart**: Persistent database-backed cart management.
+* **Order Processing**: Complete lifecycle management (Pending -> Payment -> Shipped -> Completed).
+* **Payments**: Integrated **Stripe** payment intents and Webhooks.
+* **Identity & Security**: 
+    * JWT Authentication (Access + Refresh Tokens).
+    * Role-Based Access Control (Admin vs User).
+    * Email Verification & Password Reset flows.
+* **User Engagement**: Product Reviews (verified purchase restricted) and Wishlists.
+* **Background Jobs**: Automated stock release for expired/unpaid orders using `BackgroundService`.
+* **Media**: Cloudinary integration for image optimization and storage.
 
-## 🛠 Tech Stack
+## Technology Stack
 
-* **Framework**: .NET 10 (ASP.NET Core Web API)
-* **Database**: SQL Server
-* **ORM**: Entity Framework Core
-* **Libraries**:
-    * `AutoMapper`: Object mapping.
-    * `FluentValidation`: Input validation rules.
-    * `BCrypt.Net`: Password security.
-    * `Serilog`: Structured logging.
-    * `System.IdentityModel.Tokens.Jwt`: Token generation.
+* **Core**: ASP.NET Core Web API (.NET 10)
+* **Data**: Entity Framework Core, SQL Server
+* **Validation**: FluentValidation
+* **Mapping**: AutoMapper
+* **Logging**: Serilog (Console + File sinks)
+* **Email**: MailKit / MimeKit
+* **Payment**: Stripe.net SDK
 
-## ⚙️ Getting Started
+## Getting Started
 
 ### Prerequisites
-* [.NET 10 SDK](https://dotnet.microsoft.com/download)
-* [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) (LocalDB or Docker)
 
-### Installation
+1.  [**.NET 10 SDK**](https://dotnet.microsoft.com/download)
+2.  **SQL Server** (LocalDB, Docker, or SSMS)
+3.  **Cloudinary Account** (for images)
+4.  **Stripe Account** (for payments)
+5.  **SMTP Server** (e.g., Gmail/Ethereal for dev, SendGrid for prod)
 
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/yourusername/ecommerce-api.git
-    cd ecommerce-api
-    ```
+### Configuration
 
-2.  **Configure Database**
-    Update the `ConnectionStrings` in `appsettings.json` if needed. Default points to LocalDB:
-    ```json
-    "ConnectionStrings": {
-      "ECommerceDbConnection": "Server=(localdb)\\mssqllocaldb;Database=ECommerceDb;Trusted_Connection=True;MultipleActiveResultSets=true"
-    }
-    ```
+Update `appsettings.json` or use User Secrets:
 
-3.  **Apply Migrations**
-    Run the following command to create the database and tables:
-    ```bash
-    dotnet ef database update
-    ```
+```json
+{
+  "ConnectionStrings": {
+    "ECommerceDbConnection": "Server=...;Database=ECommerceDb;..."
+  },
+  "Jwt": {
+    "Key": "YOUR_SUPER_SECRET_KEY_MUST_BE_LONG",
+    "Issuer": "ECommerceApi",
+    "Audience": "ECommerceClient",
+    "ExpireMinutes": "60"
+  },
+  "CloudinarySettings": {
+    "CloudName": "...",
+    "ApiKey": "...",
+    "ApiSecret": "..."
+  },
+  "StripeSettings": {
+    "PublishableKey": "pk_test_...",
+    "SecretKey": "sk_test_...",
+    "WebhookSecret": "whsec_..."
+  },
+  "MailSettings": {
+    "EmailFrom": "no-reply@ecommerce.com",
+    "SmtpHost": "smtp.example.com",
+    "SmtpPort": 587,
+    "SmtpUser": "...",
+    "SmtpPass": "..."
+  }
+}
+```
+## Installation
+### 1. Clone & Restore
+```
+git clone https://github.com/dabananda/ECommerce.git
+dotnet restore
+```
+### 2. Database Migration
+```
+cd ECommerce.Api
+dotnet ef database update
+```
+### 3. Run Application
+```
+dotnet run
+```
+The API will run on https://localhost:7029.
 
-4.  **Run the Application**
-    ```bash
-    dotnet run --project ECommerce.Api
-    ```
+## Documentation
+Detailed documentation is available in the `/docs` folder:
 
-## 🔌 API Endpoints
+## Testing
+- **Postman:** Import the collection provided in `docs/postman_collection.json`.
 
-### **Authentication**
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Register a new user | ❌ |
-| `POST` | `/api/auth/login` | Login and get JWT Token | ❌ |
-
-### **Products**
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/products` | Get paged list of products | ❌ |
-| `GET` | `/api/products/{id}` | Get specific product details | ❌ |
-| `POST` | `/api/products` | Create a new product | ✅ (Bearer Token) |
-| `PUT` | `/api/products/{id}` | Update an existing product | ✅ (Bearer Token) |
-| `DELETE` | `/api/products/{id}` | Delete a product | ✅ (Bearer Token) |
-
-## 🧪 Testing with Postman
-
-1.  **Register**: Send a POST to `/api/auth/register` with `username` and `password`.
-2.  **Login**: Send a POST to `/api/auth/login` to receive a `token`.
-3.  **Access Protected Routes**:
-    * Copy the `token`.
-    * In Postman, go to the **Headers** tab of your request (e.g., Create Product).
-    * Key: `Authorization`
-    * Value: `Bearer <YOUR_TOKEN>`
-
-## 📝 Logging
-Logs are written to the console and daily rolling files in the `Logs/` directory.
+- **Stripe Webhooks:** Use the Stripe CLI to forward events locally:
+```
+stripe listen --forward-to https://localhost:7029/api/payments/webhook
+```
