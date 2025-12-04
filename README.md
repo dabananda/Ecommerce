@@ -98,3 +98,7 @@ Detailed documentation is available in the `/docs` folder:
 ```
 stripe listen --forward-to https://localhost:7029/api/payments/webhook
 ```
+- **Console Payment:** Use the Stripe CLI to to make payment locally:
+```
+stripe payment_intents confirm {payment_intent} --payment-method=pm_card_visa
+```
