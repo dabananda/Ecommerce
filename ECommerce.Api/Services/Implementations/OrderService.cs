@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ECommerce.Api.Dtos.Order;
 using ECommerce.Api.Entities.OrderAggregate;
+using ECommerce.Api.Helpers;
 using ECommerce.Api.Repositories.Interfaces;
 using ECommerce.Api.Services.Interfaces;
 
@@ -80,10 +81,18 @@ namespace ECommerce.Api.Services.Implementations
             return _mapper.Map<IEnumerable<OrderDto>>(orders);
         }
 
-        public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync()
+        public async Task<PagedList<OrderDto>> GetAllOrdersAsync(OrderParams orderParams)
         {
-            var orders = await _orderRepo.GetAllOrdersAsync();
-            return _mapper.Map<IEnumerable<OrderDto>>(orders);
+            var pagedOrders = await _orderRepo.GetAllOrdersAsync(orderParams);
+
+            var orderDtos = _mapper.Map<IEnumerable<OrderDto>>(pagedOrders);
+
+            return new PagedList<OrderDto>(
+                orderDtos.ToList(),
+                pagedOrders.TotalCount,
+                pagedOrders.CurrentPage,
+                pagedOrders.PageSize
+            );
         }
 
         public async Task UpdateOrderStatusAsync(Guid orderId, string status)

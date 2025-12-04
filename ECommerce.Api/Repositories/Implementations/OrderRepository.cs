@@ -1,5 +1,6 @@
 ﻿using ECommerce.Api.Data;
 using ECommerce.Api.Entities.OrderAggregate;
+using ECommerce.Api.Helpers;
 using ECommerce.Api.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,12 +37,23 @@ namespace ECommerce.Api.Repositories.Implementations
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Order>> GetAllOrdersAsync()
+        public async Task<PagedList<Order>> GetAllOrdersAsync(OrderParams orderParams)
         {
-            return await _context.Orders
+            var query = _context.Orders
                 .Include(o => o.OrderItems)
                 .OrderByDescending(o => o.CreatedAt)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(orderParams.Status) && Enum.TryParse<OrderStatus>(orderParams.Status, true, out var statusEnum))
+            {
+                query = query.Where(o => o.Status == statusEnum);
+            }
+
+            return await PagedList<Order>.CreateAsync(
+                query,
+                orderParams.PageNumber,
+                orderParams.PageSize
+            );
         }
 
         public async Task<Order?> GetOrderByIdAdminAsync(Guid id)

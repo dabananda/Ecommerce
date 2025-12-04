@@ -1,7 +1,9 @@
 ﻿using ECommerce.Api.Dtos.Order;
+using ECommerce.Api.Helpers;
 using ECommerce.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace ECommerce.Api.Controllers
 {
@@ -58,9 +60,22 @@ namespace ECommerce.Api.Controllers
 
         [HttpGet("admin")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllOrdersAdmin()
+        public async Task<IActionResult> GetAllOrdersAdmin([FromQuery] OrderParams orderParams)
         {
-            var orders = await _orderService.GetAllOrdersAsync();
+            var orders = await _orderService.GetAllOrdersAsync(orderParams);
+
+            var paginationMetadata = new
+            {
+                orders.TotalCount,
+                orders.PageSize,
+                orders.CurrentPage,
+                orders.TotalPages,
+                orders.HasNext,
+                orders.HasPrevious
+            };
+
+            Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(paginationMetadata));
+
             return Ok(orders);
         }
 

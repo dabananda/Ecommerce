@@ -1,4 +1,5 @@
 ﻿using ECommerce.Api.Dtos.Order;
+using ECommerce.Api.Helpers;
 
 namespace ECommerce.Api.Services.Interfaces
 {
@@ -7,7 +8,7 @@ namespace ECommerce.Api.Services.Interfaces
         Task<OrderDto> CreateOrderAsync(string buyerId, CreateOrderDto dto);
         Task<IEnumerable<OrderDto>> GetUserOrdersAsync(string buyerId);
         Task<OrderDto?> GetOrderByIdAsync(Guid id, string buyerId);
-        Task<IEnumerable<OrderDto>> GetAllOrdersAsync();
+        Task<PagedList<OrderDto>> GetAllOrdersAsync(OrderParams orderParams);
         Task UpdateOrderStatusAsync(Guid orderId, string status);
     }
 }
