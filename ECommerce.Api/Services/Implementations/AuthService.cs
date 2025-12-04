@@ -41,10 +41,13 @@ namespace ECommerce.Api.Services.Implementations
 
             var result = await _userManager.CreateAsync(user, dto.Password);
 
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                await _userManager.AddToRoleAsync(user, "User");
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new Exception($"Registration failed: {errors}");
             }
+
+            await _userManager.AddToRoleAsync(user, "User");
 
             // Generate Email Confirmation Token
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
