@@ -23,22 +23,18 @@ namespace ECommerce.Api.Services.Implementations
 
         public async Task<OrderDto> CreateOrderAsync(string buyerId, CreateOrderDto dto)
         {
-            // 1. Get Cart
             var cart = await _cartRepo.GetCartAsync(buyerId);
             if (cart == null || !cart.Items.Any()) throw new Exception("Cart is empty");
 
-            // 2. Validate Stock & Create Items
             var orderItems = new List<OrderItem>();
             foreach (var item in cart.Items)
             {
                 var product = await _productRepo.GetByIdAsync(item.ProductId);
                 if (product == null) throw new Exception($"Product {item.ProductId} not found");
 
-                // Stock Check
                 if (product.StockQuantity < item.Quantity)
                     throw new Exception($"Insufficient stock for {product.Name}");
 
-                // Deduct Stock
                 product.StockQuantity -= item.Quantity;
                 await _productRepo.UpdateAsync(product);
 
@@ -53,7 +49,6 @@ namespace ECommerce.Api.Services.Implementations
                 orderItems.Add(orderItem);
             }
 
-            // 3. Create Order with Address
             var address = _mapper.Map<Address>(dto.ShippingAddress);
             var subtotal = orderItems.Sum(item => item.Price * item.Quantity);
 
@@ -63,10 +58,10 @@ namespace ECommerce.Api.Services.Implementations
                 OrderItems = orderItems,
                 Subtotal = subtotal,
                 ShippingAddress = address,
-                Status = OrderStatus.Pending
+                Status = OrderStatus.Pending,
+                PaymentMethod = dto.PaymentMethod
             };
 
-            // 4. Save & Clean up
             await _orderRepo.CreateOrderAsync(order);
             await _cartRepo.DeleteCartAsync(buyerId);
 

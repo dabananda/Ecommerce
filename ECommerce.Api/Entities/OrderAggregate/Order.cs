@@ -11,6 +11,7 @@ namespace ECommerce.Api.Entities.OrderAggregate
         public decimal Subtotal { get; set; }
         public string? PaymentIntentId { get; set; }
         public string? ClientSecret { get; set; }
+        public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Stripe;
         public Address ShippingAddress { get; set; } = new();
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public decimal GetTotal()

@@ -43,7 +43,8 @@ namespace ECommerce.Api.Mappings
             // Order Mappings
             CreateMap<Order, OrderDto>()
                 .ForMember(d => d.OrderDate, o => o.MapFrom(s => s.CreatedAt))
-                .ForMember(d => d.Total, o => o.MapFrom(s => s.GetTotal()));
+                .ForMember(d => d.Total, o => o.MapFrom(s => s.GetTotal()))
+                .ForMember(d => d.PaymentMethod, o => o.MapFrom(s => s.PaymentMethod.ToString()));
 
             CreateMap<OrderItem, OrderItemDto>();
 

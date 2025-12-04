@@ -81,7 +81,10 @@ namespace ECommerce.Api.Repositories.Implementations
         {
             return await _context.Orders
                 .Include(o => o.OrderItems)
-                .Where(o => o.Status == OrderStatus.Pending && o.CreatedAt < olderThan)
+                .Where(o =>
+                    o.Status == OrderStatus.Pending &&
+                    o.PaymentMethod == PaymentMethod.Stripe &&
+                    o.CreatedAt < olderThan)
                 .ToListAsync();
         }
     }
