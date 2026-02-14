@@ -124,6 +124,19 @@ try
     // Background Services
     builder.Services.AddHostedService<ECommerce.Api.Services.Background.StockReleaseService>();
 
+    // CORS policy
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowLocalClientApp",
+            policy =>
+            {
+                policy.WithOrigins("http://localhost:5173")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+            });
+    });
+
     var app = builder.Build();
 
     // Seed Database
@@ -152,6 +165,8 @@ try
     }
 
     app.UseHttpsRedirection();
+
+    app.UseCors("AllowLocalClientApp");
 
     app.UseAuthentication();
     app.UseAuthorization();
